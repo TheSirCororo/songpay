@@ -30,4 +30,5 @@ object ErrorResponses {
     val AuthUserNotFound = ErrorResponse("User not found", 10, 401)
     val OldPasswordNotMatch = ErrorResponse("Old password does not match", 10, 401)
     val RegistrationNotFound = ErrorResponse("Registration not found", 11, 400)
+    val DeviceNotFound = ErrorResponse("Device not found", 12, 404)
 }

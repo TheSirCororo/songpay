@@ -15,6 +15,7 @@ import ru.cororo.songpay.data.auth.response.TokenPair
 import ru.cororo.songpay.data.device.model.DeviceMetadata
 import ru.cororo.songpay.data.response.ErrorResponses
 import ru.cororo.songpay.data.response.respondError
+import ru.cororo.songpay.data.settings.model.UserSettings
 import ru.cororo.songpay.data.user.model.PendingUserData
 import ru.cororo.songpay.data.user.model.User
 import ru.cororo.songpay.data.user.repository.UserRepo
@@ -66,11 +67,14 @@ class AuthService(
             0,
             pendingUser.login,
             pendingUser.email,
-            pendingUser.login,
             UserCredentials(
                 0,
                 pendingUser.hashedPassword,
                 Instant.now()
+            ),
+            UserSettings(
+                0,
+                pendingUser.login
             )
         )
 
@@ -78,12 +82,7 @@ class AuthService(
     }
 
     fun refreshToken(request: HttpServletRequest): TokenPair {
-        val authHeader = request.getHeader("Authorization")
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            respondError(ErrorResponses.IncorrectRequest)
-        }
-
-        val jwt = authHeader.substring(7)
+        val jwt = request.extractJwt()
         val login = try {
             jwtService.extractUsername(jwt)!!
         } catch (e: Exception) {
@@ -98,6 +97,15 @@ class AuthService(
 
         val deviceMetadata = deviceService.getDeviceMetadata(user, request)
         return generateTokenPair(user, deviceMetadata)
+    }
+
+    private fun HttpServletRequest.extractJwt(): String {
+        val authHeader = getHeader("Authorization")
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            respondError(ErrorResponses.IncorrectRequest)
+        }
+
+        return authHeader.substring(7)
     }
 
     fun changePassword(user: User, oldPassword: String, newPassword: String) {
@@ -121,6 +129,11 @@ class AuthService(
         pendingRegistrations.entries.removeIf { (_, value) -> value.email == email }
         pendingRegistrations[id] = userData
         emailService.sendConfirmationMessage(email, id)
+    }
+
+    fun logout(request: HttpServletRequest) {
+        val jwt = request.extractJwt()
+        refreshTokenRepo.deleteById(jwt)
     }
 
     private fun generateTokenPair(user: User, deviceMetadata: DeviceMetadata): TokenPair {

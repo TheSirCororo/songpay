@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import ru.cororo.songpay.data.auth.model.UserCredentials
+import ru.cororo.songpay.data.settings.model.UserSettings
 import kotlin.jvm.Transient
 
 @Entity
@@ -20,13 +21,14 @@ data class User(
     @Column(name = "email", unique = true)
     val email: String,
 
-    @Column(name = "display_name")
-    var displayName: String,
-
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
     @PrimaryKeyJoinColumn
     @Transient
-    val credentials: UserCredentials
+    val credentials: UserCredentials,
+
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
+    @PrimaryKeyJoinColumn
+    val settings: UserSettings
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return mutableSetOf(SimpleGrantedAuthority("USER"))

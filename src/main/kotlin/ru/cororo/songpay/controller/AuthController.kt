@@ -38,4 +38,10 @@ class AuthController(private val authService: AuthService) {
     fun refreshToken(request: HttpServletRequest): TokenPair {
         return authService.refreshToken(request)
     }
+
+    @PostMapping("/logout")
+    fun logout(request: HttpServletRequest): StatusResponse {
+        authService.logout(request)
+        return StatusResponse()
+    }
 }

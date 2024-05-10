@@ -6,10 +6,13 @@ import org.springframework.stereotype.Service
 import ru.cororo.songpay.data.auth.repository.RefreshTokenRepo
 import ru.cororo.songpay.data.device.model.DeviceMetadata
 import ru.cororo.songpay.data.device.repository.DeviceMetadataRepo
+import ru.cororo.songpay.data.response.ErrorResponses
+import ru.cororo.songpay.data.response.respondError
 import ru.cororo.songpay.data.user.model.User
 import ua_parser.Parser
 import java.net.InetAddress
 import java.time.Instant
+import kotlin.jvm.optionals.getOrElse
 import kotlin.jvm.optionals.getOrNull
 
 const val UNKNOWN = "UNKNOWN"
@@ -37,7 +40,11 @@ class DeviceService(
         }
     }
 
-    fun invalidateDevice(deviceId: Long) = deviceMetadataRepo.deleteById(deviceId)
+    fun invalidateDevice(deviceId: Long) {
+        val device = deviceMetadataRepo.findById(deviceId).getOrElse { respondError(ErrorResponses.DeviceNotFound) }
+        refreshTokenRepo.removeByUserIdAndDeviceId(device.user.id, device.id)
+        deviceMetadataRepo.delete(device)
+    }
 
     fun saveDevice(deviceMetadata: DeviceMetadata) = deviceMetadataRepo.save(deviceMetadata)
 
