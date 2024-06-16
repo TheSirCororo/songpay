@@ -1,5 +1,7 @@
 package ru.cororo.songpay.data.response
 
-data class StatusResponse(
-    val status: String = "ok"
-)
+sealed class StatusResponse(
+    val status: String,
+) {
+    class Ok : StatusResponse("ok")
+}

@@ -7,7 +7,13 @@ import java.util.Optional
 
 @Repository
 interface UserRepo : JpaRepository<User, Long> {
-    fun findByLoginIgnoreCaseOrEmailIgnoreCase(login: String, email: String): Optional<User>
+    fun findByLoginIgnoreCaseOrEmailIgnoreCase(
+        login: String,
+        email: String,
+    ): Optional<User>
 
-    fun existsByLoginIgnoreCaseOrEmailIgnoreCase(login: String, email: String): Boolean
+    fun existsByLoginIgnoreCaseOrEmailIgnoreCase(
+        login: String,
+        email: String,
+    ): Boolean
 }

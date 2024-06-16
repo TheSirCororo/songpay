@@ -18,17 +18,21 @@ import kotlin.jvm.optionals.getOrElse
 
 @Component
 class JwtAuthenticationFilter(
-    private val jwtService: JwtService, private val userRepo: UserRepo
+    private val jwtService: JwtService,
+    private val userRepo: UserRepo,
 ) : OncePerRequestFilter() {
-
     override fun doFilterInternal(
-        request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain,
     ) {
         runCatching {
-            if (SECURITY_WHITELISTED_URLS.any { request.requestURI.startsWith(it.substringBefore("/**")) }) return filterChain.doFilter(
-                request,
-                response
-            )
+            if (SECURITY_WHITELISTED_URLS.any { request.requestURI.startsWith(it.substringBefore("/**")) }) {
+                return filterChain.doFilter(
+                    request,
+                    response,
+                )
+            }
 
             val authHeader = request.getHeader("Authorization")
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -42,7 +46,7 @@ class JwtAuthenticationFilter(
 
             try {
                 login = jwtService.extractUsername(jwt)
-                issuedAt = jwtService.extractClaim(jwt) { claim -> return@extractClaim claim.issuedAt }
+                issuedAt = jwtService.extractClaim(jwt) { claim -> claim.issuedAt }
 
                 val isRefresh =
                     jwtService.extractClaim(jwt) { claim -> return@extractClaim claim.getOrElse("refresh") { false } as Boolean }!!
@@ -52,10 +56,12 @@ class JwtAuthenticationFilter(
             }
 
             if (login != null && issuedAt != null && SecurityContextHolder.getContext().authentication == null) {
-                val user = userRepo.findByLoginIgnoreCaseOrEmailIgnoreCase(login, login)
-                    .getOrElse { throw CredentialsExpiredException("") }
+                val user =
+                    userRepo
+                        .findByLoginIgnoreCaseOrEmailIgnoreCase(login, login)
+                        .getOrElse { throw CredentialsExpiredException("") }
 
-                val isTokenValid = issuedAt < user.credentials.lastChanged && jwtService.isTokenValid(jwt, user)
+                val isTokenValid = issuedAt >= user.credentials.lastChanged && jwtService.isTokenValid(jwt, user)
                 if (!isTokenValid) throw CredentialsExpiredException("")
 
                 val authToken = UsernamePasswordAuthenticationToken(user, null, user.authorities)
@@ -66,5 +72,4 @@ class JwtAuthenticationFilter(
 
         filterChain.doFilter(request, response)
     }
-
 }

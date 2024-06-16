@@ -11,6 +11,8 @@ import ru.cororo.songpay.data.auth.model.RefreshToken
 import ru.cororo.songpay.data.auth.model.UserCredentials
 import ru.cororo.songpay.data.auth.repository.RefreshTokenRepo
 import ru.cororo.songpay.data.auth.repository.UserCredentialsRepo
+import ru.cororo.songpay.data.auth.repository.deleteAllByDeviceId
+import ru.cororo.songpay.data.auth.repository.deleteAllByUserId
 import ru.cororo.songpay.data.auth.response.TokenPair
 import ru.cororo.songpay.data.device.model.DeviceMetadata
 import ru.cororo.songpay.data.response.ErrorResponses
@@ -35,20 +37,32 @@ class AuthService(
     private val userCredentialsRepo: UserCredentialsRepo,
     private val emailService: EmailService,
     @Value("\${auth.pending_duration}")
-    private val pendingUserDuration: Long
+    private val pendingUserDuration: Long,
 ) {
     private val pendingRegistrations = mutableMapOf<UUID, PendingUserData>()
 
-    fun signIn(loginOrEmail: String, password: String, request: HttpServletRequest): TokenPair {
-        val auth = try {
-            authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken(loginOrEmail, password)
-            )
-        } catch (e: AuthenticationException) {
-            respondError(ErrorResponses.AuthFailed)
-        }
+    fun signIn(
+        loginOrEmail: String,
+        password: String,
+        request: HttpServletRequest,
+    ): TokenPair {
+        val auth =
+            try {
+                authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken(loginOrEmail, password),
+                )
+            } catch (e: AuthenticationException) {
+                respondError(ErrorResponses.AuthFailed)
+            }
 
         val user = auth.principal as User
+        return generateTokenPair(user, request)
+    }
+
+    fun generateTokenPair(
+        user: User,
+        request: HttpServletRequest,
+    ): TokenPair {
         val deviceMetadata = deviceService.getDeviceMetadata(user, request)
         deviceMetadata.lastLoggedIn = Instant.now()
         deviceService.saveDevice(deviceMetadata)
@@ -63,37 +77,43 @@ class AuthService(
             respondError(ErrorResponses.UserAlreadyExists)
         }
 
-        val user = User(
-            0,
-            pendingUser.login,
-            pendingUser.email,
-            UserCredentials(
+        val user =
+            User(
                 0,
-                pendingUser.hashedPassword,
-                Instant.now()
-            ),
-            UserSettings(
-                0,
-                pendingUser.login
+                pendingUser.login,
+                pendingUser.email,
+                UserCredentials(
+                    0,
+                    pendingUser.hashedPassword,
+                    Instant.now(),
+                ),
+                UserSettings(
+                    0,
+                    pendingUser.login,
+                ),
             )
-        )
 
-        return user
+        user.credentials.user = user
+        user.settings.user = user
+
+        return userRepo.save(user)
     }
 
     fun refreshToken(request: HttpServletRequest): TokenPair {
         val jwt = request.extractJwt()
-        val login = try {
-            jwtService.extractUsername(jwt)!!
-        } catch (e: Exception) {
-            respondError(ErrorResponses.RefreshTokenFailed)
-        }
+        val login =
+            try {
+                jwtService.extractUsername(jwt)!!
+            } catch (e: Exception) {
+                respondError(ErrorResponses.RefreshTokenFailed)
+            }
 
-        val user = userRepo.findByLoginIgnoreCaseOrEmailIgnoreCase(login, login).orElseGet {
-            respondError(ErrorResponses.AuthUserNotFound)
-        }
+        val user =
+            userRepo.findByLoginIgnoreCaseOrEmailIgnoreCase(login, login).orElseGet {
+                respondError(ErrorResponses.AuthUserNotFound)
+            }
 
-        refreshTokenRepo.removeByToken(jwt)
+        refreshTokenRepo.deleteById(jwt)
 
         val deviceMetadata = deviceService.getDeviceMetadata(user, request)
         return generateTokenPair(user, deviceMetadata)
@@ -108,19 +128,28 @@ class AuthService(
         return authHeader.substring(7)
     }
 
-    fun changePassword(user: User, oldPassword: String, newPassword: String) {
+    fun changePassword(
+        user: User,
+        oldPassword: String,
+        newPassword: String,
+    ) {
         if (!passwordEncoder.matches(oldPassword, user.password)) {
             respondError(ErrorResponses.OldPasswordNotMatch)
         }
 
-        refreshTokenRepo.removeByUserId(user.id)
+        refreshTokenRepo.deleteAllByUserId(user.id)
         user.credentials.hashedPassword = passwordEncoder.encode(newPassword)
         user.credentials.lastChanged = Instant.now()
         userCredentialsRepo.save(user.credentials)
     }
 
-    fun sendConfirmationLetter(login: String, email: String, password: String) {
-        val userData = PendingUserData(login, email, passwordEncoder.encode(password), Instant.now() + pendingUserDuration.seconds)
+    fun sendConfirmationLetter(
+        login: String,
+        email: String,
+        password: String,
+    ) {
+        val userData =
+            PendingUserData(login, email, passwordEncoder.encode(password), Instant.now() + pendingUserDuration.seconds)
         if (pendingRegistrations.containsValue(userData)) {
             respondError(ErrorResponses.IncorrectRequest)
         }
@@ -136,13 +165,16 @@ class AuthService(
         refreshTokenRepo.deleteById(jwt)
     }
 
-    private fun generateTokenPair(user: User, deviceMetadata: DeviceMetadata): TokenPair {
+    fun generateTokenPair(
+        user: User,
+        deviceMetadata: DeviceMetadata,
+    ): TokenPair {
         val accessToken = jwtService.generateAccessToken(user)
         val refreshToken = jwtService.generateRefreshToken(user)
 
         val expiry = jwtService.extractClaim(refreshToken) { it.expiration }!!
 
-        refreshTokenRepo.removeByUserIdAndDeviceId(user.id, deviceMetadata.id)
+        refreshTokenRepo.deleteAllByDeviceId(deviceMetadata.id)
         refreshTokenRepo.save(RefreshToken(refreshToken, user.id, expiry.toInstant(), deviceMetadata.id))
 
         return TokenPair(accessToken, refreshToken)

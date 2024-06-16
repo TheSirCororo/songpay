@@ -10,10 +10,12 @@ import org.springframework.web.servlet.HandlerExceptionResolver
 
 @Component
 class AuthenticationEntryPointResolver(
-    @Qualifier("handlerExceptionResolver") private val resolver: HandlerExceptionResolver
+    @Qualifier("handlerExceptionResolver") private val resolver: HandlerExceptionResolver,
 ) : AuthenticationEntryPoint {
     override fun commence(
-        request: HttpServletRequest, response: HttpServletResponse, exception: AuthenticationException
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        exception: AuthenticationException,
     ) {
         resolver.resolveException(request, response, null, exception)
     }

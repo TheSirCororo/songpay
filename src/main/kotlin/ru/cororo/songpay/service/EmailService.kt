@@ -25,7 +25,7 @@ class EmailService(
     @Value("\${auth.email_text}")
     private val emailText: String,
     @Value("\${server.host}")
-    private val serverHost: String
+    private val serverHost: String,
 ) {
     private lateinit var session: Session
 
@@ -37,14 +37,19 @@ class EmailService(
         properties["mail.smtp.host"] = emailHost
         properties["mail.smtp.port"] = emailPort
         properties["mail.smtp.ssl.trust"] = emailHost
-        session = Session.getInstance(properties, object : Authenticator() {
-            override fun getPasswordAuthentication(): PasswordAuthentication {
-                return PasswordAuthentication(emailAddress, emailPassword)
-            }
-        })
+        session =
+            Session.getInstance(
+                properties,
+                object : Authenticator() {
+                    override fun getPasswordAuthentication(): PasswordAuthentication = PasswordAuthentication(emailAddress, emailPassword)
+                },
+            )
     }
 
-    fun sendConfirmationMessage(email: String, id: UUID) {
+    fun sendConfirmationMessage(
+        email: String,
+        id: UUID,
+    ) {
         val message = MimeMessage(session)
         message.setFrom(InternetAddress(emailAddress))
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email))

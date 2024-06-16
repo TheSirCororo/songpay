@@ -1,7 +1,7 @@
 package ru.cororo.songpay.util
 
 import java.time.Instant
-import java.util.Date
+import java.util.*
 import kotlin.time.Duration
 
 operator fun Date.compareTo(instant: Instant) = time.compareTo(instant.toEpochMilli())

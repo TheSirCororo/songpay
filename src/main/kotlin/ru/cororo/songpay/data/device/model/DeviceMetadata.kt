@@ -10,14 +10,10 @@ data class DeviceMetadata(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
-    @ManyToOne(cascade = [CascadeType.ALL])
-    @JoinColumn(name = "device_id")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     val user: User,
-
     val deviceDetails: String,
-
     val location: String,
-
-    var lastLoggedIn: Instant
+    var lastLoggedIn: Instant,
 )

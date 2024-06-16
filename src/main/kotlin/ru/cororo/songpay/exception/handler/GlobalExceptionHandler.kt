@@ -1,7 +1,7 @@
 package ru.cororo.songpay.exception.handler
 
-import jakarta.annotation.Priority
 import jakarta.validation.ConstraintViolationException
+import org.springframework.core.annotation.Order
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authentication.CredentialsExpiredException
@@ -15,41 +15,29 @@ import ru.cororo.songpay.data.response.ErrorResponses
 import ru.cororo.songpay.data.response.StatusCodeException
 import ru.cororo.songpay.data.response.toResponseEntity
 
-@Priority(1000)
+@Order(1000)
 @ControllerAdvice
 class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientAuthenticationException::class)
-    fun incorrectCredentialsException(ex: InsufficientAuthenticationException): ResponseEntity<*> {
-        return ErrorResponses.AuthFailed.toResponseEntity()
-    }
+    fun incorrectCredentialsException(ex: InsufficientAuthenticationException) = ErrorResponses.AuthFailed.toResponseEntity()
 
     @ExceptionHandler(UsernameNotFoundException::class)
-    fun usernameNotFoundException(ex: UsernameNotFoundException): ResponseEntity<*> {
-        return ErrorResponses.AuthLoginNotFound.toResponseEntity()
-    }
+    fun usernameNotFoundException(ex: UsernameNotFoundException) = ErrorResponses.AuthLoginNotFound.toResponseEntity()
 
     @ExceptionHandler(CredentialsExpiredException::class)
-    fun credentialsExpiredException(ex: CredentialsExpiredException): ResponseEntity<*> {
-        return ErrorResponses.CredentialsExpired.toResponseEntity()
-    }
+    fun credentialsExpiredException(ex: CredentialsExpiredException) = ErrorResponses.CredentialsExpired.toResponseEntity()
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun httpMessageNotReadable(ex: HttpMessageNotReadableException): ResponseEntity<*> {
-        return ErrorResponses.HttpMessageNotReadable.toResponseEntity()
-    }
+    fun httpMessageNotReadable(ex: HttpMessageNotReadableException) = ErrorResponses.HttpMessageNotReadable(ex).toResponseEntity()
 
     @ExceptionHandler(ConstraintViolationException::class)
-    fun handleConstraintViolationException(ex: ConstraintViolationException): Any {
-        return ErrorResponses.ConstraintViolation(ex.constraintViolations)
-    }
+    fun handleConstraintViolationException(ex: ConstraintViolationException) =
+        ErrorResponses.ConstraintViolation(ex.constraintViolations).toResponseEntity()
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleGlobalValidationExceptions(ex: MethodArgumentNotValidException): Any {
-        return ErrorResponses.MethodArgumentNotValid(ex.bindingResult.fieldErrors)
-    }
+    fun handleGlobalValidationExceptions(ex: MethodArgumentNotValidException) =
+        ErrorResponses.MethodArgumentNotValid(ex.bindingResult.fieldErrors).toResponseEntity()
 
     @ExceptionHandler(StatusCodeException::class)
-    fun handleStatusCodeException(e: StatusCodeException): ResponseEntity<ErrorResponse> {
-        return e.errorResponse.toResponseEntity()
-    }
+    fun handleStatusCodeException(e: StatusCodeException): ResponseEntity<ErrorResponse> = e.errorResponse.toResponseEntity()
 }

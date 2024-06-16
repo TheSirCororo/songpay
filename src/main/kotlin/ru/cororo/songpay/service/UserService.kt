@@ -9,9 +9,12 @@ import ru.cororo.songpay.data.user.request.UpdateMeRequest
 @Service
 class UserService(
     private val userRepo: UserRepo,
-    private val userSettingsRepo: UserSettingsRepo
+    private val userSettingsRepo: UserSettingsRepo,
 ) {
-    fun updateUser(user: User, request: UpdateMeRequest): User {
+    fun updateUser(
+        user: User,
+        request: UpdateMeRequest,
+    ): User {
         user.settings.displayName = request.displayName
         userSettingsRepo.save(user.settings)
         return user

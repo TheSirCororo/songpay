@@ -23,44 +23,33 @@ import kotlin.jvm.optionals.getOrElse
 class ApplicationConfig(
     private val userRepo: UserRepo,
     @Value("\${device.geolite2location}")
-    private val geolite2Location: String
+    private val geolite2Location: String,
 ) {
     @Bean
-    fun userDetailsService(): UserDetailsService {
-        return UserDetailsService { login ->
+    fun userDetailsService(): UserDetailsService =
+        UserDetailsService { login ->
             userRepo.findByLoginIgnoreCaseOrEmailIgnoreCase(login, login).getOrElse {
                 throw UsernameNotFoundException("User not found")
             }
         }
-    }
 
     @Bean
-    fun authenticationProvider(): AuthenticationProvider {
-        return DaoAuthenticationProvider().apply {
+    fun authenticationProvider(): AuthenticationProvider =
+        DaoAuthenticationProvider().apply {
             setUserDetailsService(userDetailsService())
             setPasswordEncoder(passwordEncoder())
         }
-    }
 
     @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
-    }
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
-    fun authenticationManager(
-        authenticationConfiguration: AuthenticationConfiguration
-    ): AuthenticationManager {
-        return authenticationConfiguration.authenticationManager
-    }
+    fun authenticationManager(authenticationConfiguration: AuthenticationConfiguration): AuthenticationManager =
+        authenticationConfiguration.authenticationManager
 
     @Bean
-    fun databaseReader(): DatabaseReader {
-        return DatabaseReader.Builder(File(geolite2Location)).build()
-    }
+    fun databaseReader(): DatabaseReader = DatabaseReader.Builder(File(geolite2Location)).build()
 
     @Bean
-    fun uapParser(): Parser {
-        return Parser()
-    }
+    fun uapParser(): Parser = Parser()
 }

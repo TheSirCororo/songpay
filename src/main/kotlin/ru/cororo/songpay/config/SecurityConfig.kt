@@ -12,46 +12,41 @@ import org.springframework.web.cors.CorsConfiguration
 import ru.cororo.songpay.entrypoint.AuthenticationEntryPointResolver
 import ru.cororo.songpay.filter.JwtAuthenticationFilter
 
-val SECURITY_WHITELISTED_URLS = arrayOf(
-    "/api/auth/**"
-)
+val SECURITY_WHITELISTED_URLS =
+    arrayOf(
+        "/api/auth/**",
+    )
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity(debug = true)
 class SecurityConfig(
     private val authenticationProvider: AuthenticationProvider,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-    private val authenticationEntryPointResolver: AuthenticationEntryPointResolver
+    private val authenticationEntryPointResolver: AuthenticationEntryPointResolver,
 ) {
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.csrf { it.disable() }
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
+        http
+            .csrf { it.disable() }
             .cors {
                 it.configurationSource {
                     CorsConfiguration().applyPermitDefaultValues().apply {
-                        allowedHeaders = listOf("*")
                         allowedMethods = listOf("*")
-                        allowedOrigins = listOf("*")
                     }
                 }
-            }
-            .authorizeHttpRequests {
+            }.authorizeHttpRequests {
                 SECURITY_WHITELISTED_URLS.forEach { url -> it.requestMatchers(url).permitAll() }
                 it.anyRequest().authenticated()
-            }
-            .exceptionHandling {
-                it.accessDeniedHandler { _, response, _ ->
-                    response.sendError(
-                        401,
-                        "You must be authorized to access this endpoint"
-                    )
-                }
-                it.authenticationEntryPoint(authenticationEntryPointResolver)
-            }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            }.exceptionHandling {
+                it
+                    .accessDeniedHandler { _, response, _ ->
+                        response.sendError(
+                            401,
+                            "You must be authorized to access this endpoint",
+                        )
+                    }.authenticationEntryPoint(authenticationEntryPointResolver)
+            }.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
-        return http.build()
-    }
-
+            .build()
 }
