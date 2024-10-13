@@ -39,3 +39,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+.kobweb/server
+.kobweb/site

@@ -1,7 +1,10 @@
 package ru.cororo.songpay.server
 
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.netty.EngineMain
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import org.koin.dsl.module
 import org.koin.ktor.plugin.koin
 import org.koin.logger.slf4jLogger
@@ -16,10 +19,11 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureRouting()
+    configureNegotiation()
     configurePersistence()
     configureInjection()
     configureValidation()
+    configureRouting()
 }
 
 private val appModule = module {
@@ -30,5 +34,11 @@ private fun Application.configureInjection() {
     koin {
         slf4jLogger()
         modules(appModule)
+    }
+}
+
+private fun Application.configureNegotiation() {
+    install(ContentNegotiation) {
+        json()
     }
 }

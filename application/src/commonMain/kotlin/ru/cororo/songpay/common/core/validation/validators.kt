@@ -8,8 +8,9 @@ import io.konform.validation.jsonschema.pattern
 internal inline fun <reified T : Any> validator(noinline builder: ValidationBuilder<T>.() -> Unit) =
     ValidationManager.registerValidator(builder)
 
+//language=RegExp
 internal fun ValidationBuilder<String>.email() =
-    pattern("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
+    pattern("^((?!\\.)[\\w-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])$")
 
 internal fun ValidationBuilder<String>.login() {
     minLength(5)
