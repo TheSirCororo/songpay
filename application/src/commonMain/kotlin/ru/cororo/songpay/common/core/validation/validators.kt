@@ -10,8 +10,9 @@ internal inline fun <reified T : Any> validator(noinline builder: ValidationBuil
 
 //language=RegExp
 internal fun ValidationBuilder<String>.email() =
-    pattern("^((?!\\.)[\\w-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])$")
+    pattern("^((?!\\.)[\\w\\-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])\$")
 
+//language=RegExp
 internal fun ValidationBuilder<String>.login() {
     minLength(5)
     maxLength(15)

@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kobweb.application)
+    idea
 }
 
 kobweb {
@@ -17,6 +18,13 @@ kobweb {
         index {
             description.set("Powered by Kobweb")
         }
+    }
+}
+
+idea {
+    module {
+        isDownloadJavadoc = true
+        isDownloadSources = true
     }
 }
 
@@ -44,6 +52,7 @@ kotlin {
             implementation("io.ktor:ktor-server-request-validation:$ktorVersion")
             implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
             implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+            implementation("io.ktor:ktor-server-cors:$ktorVersion")
             implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
             implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
             implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
@@ -68,6 +77,7 @@ kotlin {
             implementation("io.ktor:ktor-client-js:$ktorVersion")
             implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
             implementation("io.insert-koin:koin-compose:4.0.0")
+            implementation("com.github.stevdza-san:KotlinBootstrap:0.1.5")
         }
     }
 
@@ -78,6 +88,10 @@ kotlin {
             docker {
                 jreVersion.set(JavaVersion.VERSION_21)
             }
+        }
+
+        application {
+            mainClass.set("ru.cororo.songpay.server.MainKt")
         }
     }
 //

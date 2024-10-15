@@ -1,4 +1,4 @@
-package ru.cororo.songpay.server.routing
+package ru.cororo.songpay.server.plugins
 
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
